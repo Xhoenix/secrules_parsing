@@ -40,6 +40,7 @@ def process_rules(files, verbose=False, debug=False):
                 "line": e.line,
                 "col": e.col,
                 "message": e.message,
+                "context": e.context,
             }
         models.append(model)
     return models
@@ -86,7 +87,7 @@ def get_correctness(files, output_type, models):
                 )
             else:
                 print(
-                    f"Syntax invalid: Syntax error in line {e['line']} col {e['col']}: {e['message']}"
+                    f"Syntax invalid: Syntax error in line {e['line']} col {e['col']}: {e['message']} - {e['context']}"
                 )
             exitcode = 1
         else:
@@ -106,9 +107,9 @@ def process_from_str(str, verbose=False, debug=False):
         model = modsec_mm.model_from_str(str)
     except TextXSyntaxError as e:
         model = {
-            "file": rule_file,
             "line": e.line,
             "col": e.col,
             "message": e.message,
+            "context": e.context,
         }
     return model

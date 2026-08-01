@@ -2,22 +2,30 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      publish:
-        description: "Publish to pypi.org? (will not work from forks!)"
-        required: false
-        default: 'false'
-
 jobs:
-  test:
-    name: Test Release
+  pypi:
+    name: upload release to PyPI
     runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - name: Publish to pypi
-        uses: coveooss/pypi-publish-with-poetry@v1.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          project-name: secrules-parsing
-          pypi-token: ${{ secrets.PYPI_TOKEN }}
-          pre-release: ${{ github.ref != 'refs/heads/master' }}
-          dry-run: ${{ github.ref != 'refs/heads/master' && github.event.inputs.publish != 'true' }}
+          python-version: "3.x"
+      - name: Install Poetry
+        uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
+        with:
+          virtualenvs-create: false
+      - name: Update version (kept at 0.0.0) in pyproject.toml and build
+        run: |
+          poetry version ${{ github.ref_name }}
+          poetry build
+      - name: Mint token
+        id: mint
+        uses: tschm/token-mint-action@eef668ab210066f42abfe3f2af4e03ec24f30089 # v1.0.3
+      - name: Publish the package with poetry
+        run: |
+          poetry publish -u __token__ -p '${{ steps.mint.outputs.api-token }}'
